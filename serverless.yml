@@ -1,0 +1,43 @@
+service: burst-compute-example
+
+plugins:
+  - serverless-bundle
+
+custom:
+  version: 1.0.0
+  outputBucket: janelia-scicomp-fractaldemo-dev
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - "arn:aws:s3:::${self:custom.outputBucket}/*"
+
+functions:
+
+  combiner:
+    handler: combiner.combiner
+    memorySize: 128
+    timeout: 30
+
+  fractalLocalDisk:
+    handler: worker.fractalLocalDisk
+    memorySize: 128
+    timeout: 30
+
+  fractalLocalDisk2:
+    handler: mandelbrot.fractalLocalDisk
+    memorySize: 128
+    timeout: 30
+
+  fractalS3:
+    handler: worker.fractalS3
+    memorySize: 128
+    timeout: 30
+    environment:
+      OUTPUT_BUCKET: ${self:custom.outputBucket}
