@@ -226,7 +226,10 @@ function draw(
   img,
   width,
   height,
-  zoom_param,
+  tileWidth,
+  tileHeight,
+  tileIndex,
+  zoomParam,
   lookAt,
   iterations,
   autoIterations,
@@ -234,17 +237,13 @@ function draw(
   superSamples,
   colorScheme,
 ) {
-  console.log(`Generating ${width}x${height} image`);
-  console.log(`  zoom: ${zoom_param}`);
-  console.log(`  lookAt: ${lookAt}`);
-  console.log(`  iterations: ${iterations}`);
-  console.log(`  autoIterations: ${autoIterations}`);
-  console.log(`  escapeRadius: ${escapeRadius}`);
-  console.log(`  superSamples: ${superSamples}`);
-  console.log(`  colorScheme: ${colorScheme}`);
+  const tileX = Math.floor(((tileWidth * tileIndex) % width) / tileWidth);
+  const tileY = Math.floor((tileHeight * tileIndex) / width);
+  const tileExtentsX = [tileX * tileWidth, (tileX + 1) * tileWidth];
+  const tileExtentsY = [tileY * tileHeight, (tileY + 1) * tileHeight];
 
   const pickColor = getColorPicker(colorScheme);
-  const zoom = zoom_param;
+  const zoom = zoomParam;
   const xRange = [lookAt[0] - zoom[0] / 2, lookAt[0] + zoom[0] / 2];
   const yRange = [lookAt[1] - zoom[1] / 2, lookAt[1] + zoom[1] / 2];
 
@@ -277,13 +276,26 @@ function draw(
   }
 
   const escapeRadius2 = escapeRadius ** 2.0;
-  const dx = (xRange[1] - xRange[0]) / (0.5 + (width - 1));
+  const Cr_step = (xRange[1] - xRange[0]) / (0.5 + (width - 1));
   const Ci_step = (yRange[1] - yRange[0]) / (0.5 + (height - 1));
 
-  function drawLineSuperSampled(Ci, offset, Cr_init, Cr_step) {
+  console.log(`Generating ${tileWidth}x${tileHeight} tile of ${width}x${height} image`);
+  console.log(`  zoom: ${zoom}`);
+  console.log(`  lookAt: ${lookAt}`);
+  console.log(`  iterations: ${iterations}`);
+  console.log(`  autoIterations: ${autoIterations}`);
+  console.log(`  escapeRadius: ${escapeRadius}`);
+  console.log(`  superSamples: ${superSamples}`);
+  console.log(`  colorScheme: ${colorScheme}`);
+  console.log(`  tileIndex: ${tileIndex}`);
+  console.log(`  tileCoords: (${tileX}, ${tileY})`);
+  console.log(`  tileExtentsX: ${tileExtentsX[0]} ${tileExtentsX[1]}`);
+  console.log(`  tileExtentsY: ${tileExtentsY[0]} ${tileExtentsY[1]}`);
+
+  function drawLineSuperSampled(Ci, offset, Cr_init) {
     let Cr = Cr_init;
 
-    for (let x = 0; x < width; ++x, Cr += Cr_step) {
+    for (let x = 0; x < tileWidth; ++x, Cr += Cr_step) {
       let color = [0, 0, 0, 255];
 
       for (let s = 0; s < superSamples; ++s) {
@@ -303,9 +315,9 @@ function draw(
     }
   }
 
-  function drawLine(Ci, offset, Cr_init, Cr_step) {
+  function drawLine(Ci, offset, Cr_init) {
     let Cr = Cr_init;
-    for (let x = 0; x < width; ++x, Cr += Cr_step) {
+    for (let x = 0; x < tileWidth; ++x, Cr += Cr_step) {
       const p = iterateEquation(Cr, Ci, escapeRadius2, steps);
       const color = pickColor(steps, p[0], p[1], p[2]);
       const idx = (offset + x) << 2;
@@ -318,14 +330,14 @@ function draw(
 
   const start = (new Date()).getTime();
   let pixels = 0;
-  let Ci = yRange[0];
+  let Ci = yRange[0] + (Ci_step * tileExtentsY[0]);
   let sy = 0;
   const drawLineFunc = superSamples > 1 ? drawLineSuperSampled : drawLine;
 
-  while (sy < height) {
-    drawLineFunc(Ci, sy * width, xRange[0], dx);
+  while (sy < tileHeight) {
+    drawLineFunc(Ci, sy * tileWidth, xRange[0] + (Cr_step * tileExtentsX[0]));
     Ci += Ci_step;
-    pixels += width / 4;
+    pixels += tileWidth / 4;
     sy += 1;
   }
 
@@ -347,14 +359,20 @@ async function generateImage(filepath, params) {
   const colorScheme = params.colorScheme || 'pickColorHSV1';
   const width = params.width || 1024;
   const height = params.height || 786;
+  const tileWidth = params.tileWidth || width;
+  const tileHeight = params.tileHeight || height;
+  const tileIndex = params.tileIndex || 0;
 
-  const buffer32 = Buffer.alloc(4 * width * height);
+  const buffer32 = Buffer.alloc(4 * tileWidth * tileHeight);
   const bitmap32 = new Uint8Array(buffer32.buffer);
 
   draw(
     bitmap32,
     width,
     height,
+    tileWidth,
+    tileHeight,
+    tileIndex,
     zoom,
     lookAt,
     iterations,
@@ -364,15 +382,15 @@ async function generateImage(filepath, params) {
     colorScheme,
   );
 
-  const png = new PNG({ width, height });
+  const png = new PNG({ width: tileWidth, height: tileHeight });
   png.data = bitmap32;
-  console.log(`Writing image to ${filepath} - ${png.data.length}`);
+  console.log(`Writing image to ${filepath}`);
   png.pack().pipe(fs.createWriteStream(filepath));
   console.log(`Wrote image to ${filepath}`);
 }
 
 export const fractalLocalDisk = async (event) => {
-  const params = event.params || { };
+  const params = event.params || { tileWidth: 200, tileHeight: 200, tileIndex: 10 };
   await generateImage('fractal.png', params);
 
   return {
