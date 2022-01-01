@@ -6,6 +6,7 @@ plugins:
 custom:
   version: 1.0.0
   outputBucket: janelia-scicomp-fractaldemo-dev
+  outputPrefix: /demo/
 
 provider:
   name: aws
@@ -30,14 +31,10 @@ functions:
     memorySize: 128
     timeout: 30
 
-  fractalLocalDisk2:
-    handler: mandelbrot.fractalLocalDisk
-    memorySize: 128
-    timeout: 30
-
   fractalS3:
     handler: worker.fractalS3
     memorySize: 128
     timeout: 30
     environment:
       OUTPUT_BUCKET: ${self:custom.outputBucket}
+      OUTPUT_PREFIX: ${self:custom.outputPrefix}

@@ -4,7 +4,6 @@
 /* eslint-disable prefer-destructuring */
 /* eslint-disable camelcase */
 
-import fs from 'fs';
 import { PNG } from 'pngjs';
 
 /*
@@ -349,7 +348,7 @@ function draw(
   console.log(`Render speed: ${speed} pixels/second`);
 }
 
-async function generateImage(filepath, params) {
+export const generateImage = async (writeStream, params) => {
   const zoom = params.zoom || [2.6549836959630824, 1.447598253275109];
   const lookAt = params.lookAt || [-0.6, 0];
   const iterations = 'iterations' in params ? params.iterations : 100;
@@ -382,30 +381,16 @@ async function generateImage(filepath, params) {
     colorScheme,
   );
 
-  const png = new PNG({ width: tileWidth, height: tileHeight });
-  png.data = bitmap32;
-  console.log(`Writing image to ${filepath}`);
-  png.pack().pipe(fs.createWriteStream(filepath));
-  console.log(`Wrote image to ${filepath}`);
-}
-
-export const fractalLocalDisk = async (event) => {
-  const params = event.params || { tileWidth: 200, tileHeight: 200, tileIndex: 10 };
-  await generateImage('fractal.png', params);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify(
-      {
-        message: 'Fractal generated locally',
-        input: event,
-      },
-      null,
-      2,
-    ),
-  };
+  return bitmap32;
 };
 
-export const fractalS3 = async (event) => {
-  console.log(`Received event: ${JSON.stringify(event, null, 2)}`);
+export const generatePNG = async (writeStream, params) => {
+  const width = params.width || 1024;
+  const height = params.height || 786;
+  const tileWidth = params.tileWidth || width;
+  const tileHeight = params.tileHeight || height;
+  const image = await generateImage(writeStream, params);
+  const png = new PNG({ width: tileWidth, height: tileHeight });
+  png.data = image;
+  png.pack().pipe(writeStream);
 };
