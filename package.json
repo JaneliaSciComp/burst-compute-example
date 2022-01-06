@@ -9,10 +9,12 @@
   },
   "dependencies": {
     "aws-sdk": "^2.761.0",
-    "pngjs": "^5.0.0"
+    "exponential-backoff": "^3.1.0",
+    "sharp": "^0.29.3"
   },
   "devDependencies": {
     "eslint": "^7.9.0",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.3",
     "serverless": "^2.69.1",
     "serverless-bundle": "^4.3.1"

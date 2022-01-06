@@ -1,10 +1,8 @@
-/* eslint-disable no-bitwise */
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-plusplus */
-/* eslint-disable prefer-destructuring */
-/* eslint-disable camelcase */
+/* eslint-disable */
 
-import { PNG } from 'pngjs';
+import sharp from 'sharp';
+
+const DEBUG = true;
 
 /*
  * This code is derived from the web-based mandelbrot renderer described below.
@@ -223,8 +221,8 @@ function getColorPicker(p) {
  */
 function draw(
   img,
-  width,
-  height,
+  imageWidth,
+  imageHeight,
   tileWidth,
   tileHeight,
   tileIndex,
@@ -236,8 +234,8 @@ function draw(
   superSamples,
   colorScheme,
 ) {
-  const tileX = Math.floor(((tileWidth * tileIndex) % width) / tileWidth);
-  const tileY = Math.floor((tileHeight * tileIndex) / width);
+  const tileX = Math.floor(((tileWidth * tileIndex) % imageWidth) / tileWidth);
+  const tileY = Math.floor((tileHeight * tileIndex) / imageWidth);
   const tileExtentsX = [tileX * tileWidth, (tileX + 1) * tileWidth];
   const tileExtentsY = [tileY * tileHeight, (tileY + 1) * tileHeight];
 
@@ -250,7 +248,7 @@ function draw(
   * Adjust aspect ratio based on plot ranges and canvas dimensions.
   */
   const ratio = Math.abs(xRange[1] - xRange[0]) / Math.abs(yRange[1] - yRange[0]);
-  const sratio = width / height;
+  const sratio = imageWidth / imageHeight;
   if (sratio > ratio) {
     const xf = sratio / ratio;
     xRange[0] *= xf;
@@ -275,21 +273,23 @@ function draw(
   }
 
   const escapeRadius2 = escapeRadius ** 2.0;
-  const Cr_step = (xRange[1] - xRange[0]) / (0.5 + (width - 1));
-  const Ci_step = (yRange[1] - yRange[0]) / (0.5 + (height - 1));
+  const Cr_step = (xRange[1] - xRange[0]) / (0.5 + (imageWidth - 1));
+  const Ci_step = (yRange[1] - yRange[0]) / (0.5 + (imageHeight - 1));
 
-  console.log(`Generating ${tileWidth}x${tileHeight} tile of ${width}x${height} image`);
-  console.log(`  zoom: ${zoom}`);
-  console.log(`  lookAt: ${lookAt}`);
-  console.log(`  iterations: ${iterations}`);
-  console.log(`  autoIterations: ${autoIterations}`);
-  console.log(`  escapeRadius: ${escapeRadius}`);
-  console.log(`  superSamples: ${superSamples}`);
-  console.log(`  colorScheme: ${colorScheme}`);
-  console.log(`  tileIndex: ${tileIndex}`);
-  console.log(`  tileCoords: (${tileX}, ${tileY})`);
-  console.log(`  tileExtentsX: ${tileExtentsX[0]} ${tileExtentsX[1]}`);
-  console.log(`  tileExtentsY: ${tileExtentsY[0]} ${tileExtentsY[1]}`);
+  if (DEBUG) {
+    console.log(`Generating ${tileWidth}x${tileHeight} tile of ${imageWidth}x${imageHeight} image`);
+    console.log(`  zoom: ${zoom}`);
+    console.log(`  lookAt: ${lookAt}`);
+    console.log(`  iterations: ${iterations}`);
+    console.log(`  autoIterations: ${autoIterations}`);
+    console.log(`  escapeRadius: ${escapeRadius}`);
+    console.log(`  superSamples: ${superSamples}`);
+    console.log(`  colorScheme: ${colorScheme}`);
+    console.log(`  tileIndex: ${tileIndex}`);
+    console.log(`  tileCoords: (${tileX}, ${tileY})`);
+    console.log(`  tileExtentsX: ${tileExtentsX[0]} ${tileExtentsX[1]}`);
+    console.log(`  tileExtentsY: ${tileExtentsY[0]} ${tileExtentsY[1]}`);
+  }
 
   function drawLineSuperSampled(Ci, offset, Cr_init) {
     let Cr = Cr_init;
@@ -343,12 +343,12 @@ function draw(
   const now = (new Date()).getTime();
   const elapsedMS = now - start;
   const renderTime = (elapsedMS / 1000.0).toFixed(1); // 1 comma
-  console.log(`Render time: ${renderTime} ms`);
+  if (DEBUG) console.log(`Render time: ${renderTime} ms`);
   const speed = Math.floor(pixels / elapsedMS);
-  console.log(`Render speed: ${speed} pixels/second`);
+  if (DEBUG) console.log(`Render speed: ${speed} pixels/second`);
 }
 
-export const generateImage = async (writeStream, params) => {
+export const generateImage = async (params) => {
   const zoom = params.zoom || [2.6549836959630824, 1.447598253275109];
   const lookAt = params.lookAt || [-0.6, 0];
   const iterations = 'iterations' in params ? params.iterations : 100;
@@ -356,19 +356,18 @@ export const generateImage = async (writeStream, params) => {
   const escapeRadius = params.escapeRadius || 10.0;
   const superSamples = params.superSamples || 1;
   const colorScheme = params.colorScheme || 'pickColorHSV1';
-  const width = params.width || 1024;
-  const height = params.height || 786;
-  const tileWidth = params.tileWidth || width;
-  const tileHeight = params.tileHeight || height;
+  const imageWidth = params.imageWidth || 1024;
+  const imageHeight = params.imageHeight || 786;
+  const tileWidth = params.tileWidth || imageWidth;
+  const tileHeight = params.tileHeight || imageHeight;
   const tileIndex = params.tileIndex || 0;
-
   const buffer32 = Buffer.alloc(4 * tileWidth * tileHeight);
   const bitmap32 = new Uint8Array(buffer32.buffer);
 
   draw(
     bitmap32,
-    width,
-    height,
+    imageWidth,
+    imageHeight,
     tileWidth,
     tileHeight,
     tileIndex,
@@ -385,12 +384,23 @@ export const generateImage = async (writeStream, params) => {
 };
 
 export const generatePNG = async (writeStream, params) => {
-  const width = params.width || 1024;
-  const height = params.height || 786;
-  const tileWidth = params.tileWidth || width;
-  const tileHeight = params.tileHeight || height;
-  const image = await generateImage(writeStream, params);
-  const png = new PNG({ width: tileWidth, height: tileHeight });
-  png.data = image;
-  png.pack().pipe(writeStream);
+  const imageWidth = params.imageWidth || 1024;
+  const imageHeight = params.imageHeight || 786;
+  const tileWidth = params.tileWidth || imageWidth;
+  const tileHeight = params.tileHeight || imageHeight;
+  const buffer = await generateImage({
+    ...params,
+    imageWidth,
+    imageHeight,
+    tileWidth,
+    tileHeight,
+  });
+  const image = sharp(buffer, {
+    raw: {
+      width: tileWidth,
+      height: tileHeight,
+      channels: 4
+    }
+  });
+  await image.png().pipe(writeStream);
 };
