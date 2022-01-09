@@ -1,22 +1,29 @@
 {
   "name": "burst-compute-example",
   "version": "1.0.0",
-  "description": "",
+  "description": "Example of using the burst-compute engine to generate a fractal image",
   "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JaneliaSciComp/burst-parallel-example"
+  },
   "private": true,
   "scripts": {
-    "sls": "./node_modules/serverless/bin/serverless.js"
+    "sls": "./node_modules/serverless/bin/serverless.js",
+    "lint": "./node_modules/.bin/eslint *.js",
+    "test": "jest"
   },
   "dependencies": {
-    "aws-sdk": "^2.761.0",
+    "aws-sdk": "^2.1053.0",
     "exponential-backoff": "^3.1.0",
     "sharp": "^0.29.3"
   },
   "devDependencies": {
-    "eslint": "^7.9.0",
+    "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.25.3",
-    "serverless": "^2.69.1",
-    "serverless-bundle": "^4.3.1"
+    "eslint-plugin-import": "^2.25.4",
+    "jest": "^26.6.3",
+    "serverless": "^2.70.0",
+    "serverless-bundle": "^5.2.0"
   }
 }

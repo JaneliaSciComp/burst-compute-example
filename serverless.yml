@@ -6,12 +6,12 @@ plugins:
 custom:
   version: 1.0.0
   debug: true
-  outputBucket: janelia-scicomp-fractaldemo-dev
-  outputPrefix: /demo
   maxParallelism: 3000
   burstComputeStage: ${env:BURST_COMPUTE_STAGE, self:provider.stage}
   dispatchFunction: ${cf:burst-compute-${self:custom.burstComputeStage}.DispatchLambdaFunction}
   tasksTable: ${cf:burst-compute-${self:custom.burstComputeStage}.TasksTable}
+  outputBucket: ${env:BUCKET, 'burst-compute-example-${self:custom.burstComputeStage}'}
+  outputPrefix: ${env:PREFIX, 'fractal'}
   # Work around for native compilation
   # from https://github.com/lovell/sharp/issues/2230#issuecomment-698653336
   bundle:
@@ -69,8 +69,8 @@ functions:
 
   combiner:
     handler: combiner.handler
-    memorySize: 256
-    timeout: 30
+    memorySize: 512
+    timeout: 900
     environment:
       DEBUG: ${self:custom.debug}
       OUTPUT_BUCKET: ${self:custom.outputBucket}

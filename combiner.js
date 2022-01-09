@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import sharp from 'sharp';
 import { getS3ContentWithRetry, removeKey, getUploadPromise } from './utils';
 
@@ -76,6 +75,7 @@ export const handler = async (event) => {
       const y = tileY * tileHeight;
       console.log(`Adding tile ${tileIndex} (${tileWidth}x${tileHeight}) to the final image at (${x},${y})`);
       tiles.push({
+        key,
         input: buffer,
         top: y,
         left: x,
@@ -90,10 +90,9 @@ export const handler = async (event) => {
 
   if (DELETE_TILES) {
     const deletePromises = [];
-    for (let tileIndex = 0; tileIndex < numTiles; tileIndex += 1) {
-      const tileKey = `${outputPrefix}/tiles/${tileIndex}.png`;
-      deletePromises.push(removeKey(outputBucket, tileKey));
-    }
+    tiles.forEach((tile) => {
+      deletePromises.push(removeKey(outputBucket, tile.key));
+    });
     await Promise.all(deletePromises);
     if (DEBUG) console.log('Deleted tiles');
   }

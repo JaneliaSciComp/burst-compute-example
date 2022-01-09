@@ -5,7 +5,7 @@ import sharp from 'sharp';
 const DEBUG = true;
 
 /*
- * This code is derived from the web-based mandelbrot renderer described below.
+ * This code is derived from the web-based Mandelbrot Set renderer described below.
  * I modified it to make it run on either server or client and packaged it as a ES6 library,
  * so that it can be used as a burst compute example function.
  *
