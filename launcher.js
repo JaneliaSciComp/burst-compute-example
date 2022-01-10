@@ -22,7 +22,7 @@ export const handler = async (event) => {
     batchSize,
     numLevels,
     maxParallelism,
-    searchTimeoutSecs: 100,
+    searchTimeoutSecs: 120,
     jobParameters: {
       ...event,
       imageWidth,

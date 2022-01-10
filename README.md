@@ -24,14 +24,13 @@ This will deploy a *launcher* function you will use the launch burst computation
     * `tileHeight`: the height of each tile in pixels
     * `batchSize`: the maximum number of tiles to process serially
     * `numLevels`: the number of levels in the invoker lambda function tree
-    * `jobParameters`: a JSON object containing the parameters for the fractal generation:
-        * `lookAt`: a point in the complex plane to look at
-        * `zoom`: the width and height of the complex plane
-        * `iterations`: the number of iterations to perform
-        * `autoIterations`: if true, iterations is calculated automatically based on the size of the image
-        * `escapeRadius`: radius of circle on the complex plane used to determine if a point is in the set
-        * `superSamples`: number of times to sample the image
-        * `colorScheme`: the color scheme to use (pickColorHSV1, pickColorHSV2, pickColorHSV3, pickColorGrayscale2)
+    * `lookAt`: a point in the complex plane to look at
+    * `zoom`: the width and height of the complex plane
+    * `iterations`: the number of iterations to perform
+    * `autoIterations`: if true, iterations is calculated automatically based on the size of the image
+    * `escapeRadius`: radius of circle on the complex plane used to determine if a point is in the set
+    * `superSamples`: number of times to sample the image
+    * `colorScheme`: the color scheme to use (pickColorHSV1, pickColorHSV2, pickColorHSV3, pickColorGrayscale2)
 
 3. Invoke the function with your test event to launch burst computation
 4. Check your bucket for the result under /fractal/final.png
@@ -48,9 +47,7 @@ You can also monitor progress by checking the burst-compute state machine in the
   "tileHeight": 200,
   "batchSize": 4,
   "numLevels": 2,
-  "jobParameters": {
-    "colorScheme": "pickColorHSV2"
-  }
+  "colorScheme": "pickColorHSV2"
 }
 ```
 

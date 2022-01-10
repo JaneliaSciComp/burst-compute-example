@@ -2,7 +2,7 @@
 
 import sharp from 'sharp';
 
-const DEBUG = true;
+const DEBUG = false;
 
 /*
  * This code is derived from the web-based Mandelbrot Set renderer described below.
@@ -235,7 +235,7 @@ function draw(
   colorScheme,
 ) {
   const tileX = Math.floor(((tileWidth * tileIndex) % imageWidth) / tileWidth);
-  const tileY = Math.floor((tileHeight * tileIndex) / imageWidth);
+  const tileY = Math.floor((tileWidth * tileIndex) / imageWidth);
   const tileExtentsX = [tileX * tileWidth, (tileX + 1) * tileWidth];
   const tileExtentsY = [tileY * tileHeight, (tileY + 1) * tileHeight];
 
@@ -348,7 +348,7 @@ function draw(
   if (DEBUG) console.log(`Render speed: ${speed} pixels/second`);
 }
 
-export const generateImage = async (params) => {
+export const generateImage = (params) => {
   const zoom = params.zoom || [2.6549836959630824, 1.447598253275109];
   const lookAt = params.lookAt || [-0.6, 0];
   const iterations = 'iterations' in params ? params.iterations : 100;
@@ -388,7 +388,7 @@ export const generatePNG = async (writeStream, params) => {
   const imageHeight = params.imageHeight || 786;
   const tileWidth = params.tileWidth || imageWidth;
   const tileHeight = params.tileHeight || imageHeight;
-  const buffer = await generateImage({
+  const buffer = generateImage({
     ...params,
     imageWidth,
     imageHeight,

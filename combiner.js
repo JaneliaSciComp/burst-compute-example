@@ -1,8 +1,8 @@
 import sharp from 'sharp';
-import { getS3ContentWithRetry, removeKey, getUploadPromise } from './utils';
+import { getS3ContentWithRetry, getRemoveKeyPromise, getS3UploadPromise } from './utils';
 
-const DEBUG = Boolean(process.env.DEBUG);
-const DELETE_TILES = Boolean(process.env.DELETE_TILES);
+const DEBUG = (process.env.DEBUG === 'true');
+const deleteTiles = (process.env.DELETE_TILES === 'true');
 const outputBucket = process.env.OUTPUT_BUCKET;
 const outputPrefix = process.env.OUTPUT_PREFIX;
 
@@ -68,34 +68,33 @@ export const handler = async (event) => {
     const key = `${outputPrefix}/tiles/${tileIndex}.png`;
     // eslint-disable-next-line no-await-in-loop
     const buffer = await getS3ContentWithRetry(outputBucket, key);
-    if (buffer) {
-      const tileX = Math.floor(((tileWidth * tileIndex) % imageWidth) / tileWidth);
-      const tileY = Math.floor((tileHeight * tileIndex) / imageWidth);
-      const x = tileX * tileWidth;
-      const y = tileY * tileHeight;
-      console.log(`Adding tile ${tileIndex} (${tileWidth}x${tileHeight}) to the final image at (${x},${y})`);
-      tiles.push({
-        key,
-        input: buffer,
-        top: y,
-        left: x,
-      });
-    }
+    const tileX = Math.floor(((tileWidth * tileIndex) % imageWidth) / tileWidth);
+    const tileY = Math.floor((tileWidth * tileIndex) / imageWidth);
+    const x = tileX * tileWidth;
+    const y = tileY * tileHeight;
+    if (DEBUG) console.log(`Adding tile ${tileIndex} (${tileWidth}x${tileHeight}) to the final image at (${x},${y})`);
+    tiles.push({
+      key,
+      input: buffer,
+      top: y,
+      left: x,
+    });
   }
 
   const key = `${outputPrefix}/final_image.png`;
-  const { bodyStream, uploadPromise } = getUploadPromise(outputBucket, key);
+  const { bodyStream, uploadPromise } = getS3UploadPromise(outputBucket, key);
   await finalImage.composite(tiles).png().pipe(bodyStream);
   await uploadPromise;
+  if (DEBUG) console.log(`Wrote final image to s3://${outputBucket}/${key}`);
 
-  if (DELETE_TILES) {
+  if (deleteTiles) {
     const deletePromises = [];
     tiles.forEach((tile) => {
-      deletePromises.push(removeKey(outputBucket, tile.key));
+      deletePromises.push(getRemoveKeyPromise(outputBucket, tile.key));
     });
     await Promise.all(deletePromises);
-    if (DEBUG) console.log('Deleted tiles');
+    if (DEBUG) console.log(`Deleted ${deletePromises.length} tiles`);
   }
 
-  return `Generated s3://${outputBucket}/${key}`;
+  return true;
 };

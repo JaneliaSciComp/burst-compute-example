@@ -26,6 +26,8 @@ provider:
   runtime: nodejs14.x
   region: ${opt:region, "us-east-1"}
   stage: ${opt:stage, "dev"}
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -50,7 +52,7 @@ functions:
   launcher:
     handler: launcher.handler
     memorySize: 128
-    timeout: 10
+    timeout: 60
     environment:
       DEBUG: ${self:custom.debug}
       DISPATCH_FUNCTION_ARN: ${self:custom.dispatchFunction}
@@ -61,7 +63,7 @@ functions:
   worker:
     handler: worker.handler
     memorySize: 128
-    timeout: 30
+    timeout: 60
     environment:
       DEBUG: ${self:custom.debug}
       OUTPUT_BUCKET: ${self:custom.outputBucket}
@@ -69,24 +71,15 @@ functions:
 
   combiner:
     handler: combiner.handler
-    memorySize: 512
+    memorySize: 1024
     timeout: 900
     environment:
       DEBUG: ${self:custom.debug}
       OUTPUT_BUCKET: ${self:custom.outputBucket}
       OUTPUT_PREFIX: ${self:custom.outputPrefix}
-      DELETE_TILES: true
+      DELETE_TILES: false
 
   fractalLocalDisk:
     handler: worker.fractalLocalDisk
     memorySize: 128
     timeout: 30
-
-  fractalS3:
-    handler: worker.fractalS3
-    memorySize: 128
-    timeout: 30
-    environment:
-      OUTPUT_BUCKET: ${self:custom.outputBucket}
-      OUTPUT_PREFIX: ${self:custom.outputPrefix}
-
