@@ -1,5 +1,7 @@
 # burst-compute-example
 
+[![DOI](https://zenodo.org/badge/441600233.svg)](https://zenodo.org/badge/latestdoi/441600233)
+
 Simple example of the [burst-compute](https://github.com/JaneliaSciComp/burst-compute) framework. Generates a Mandelbrot Set image in N pieces and stitches them together to demonstrate the power of burst computation in the cloud.
 
 ## Deployment
